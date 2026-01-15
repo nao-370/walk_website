@@ -1,6 +1,8 @@
-(function () {
+ (function () {
     let db;
     let map;
+    // idごとに対応するマーカーを記録するオブジェクト。削除時に参照する
+    const markersById = {};
 
     // IndexedDBを開く
     function openDB() {
@@ -78,13 +80,18 @@
 
     // マーカーを追加し、ポップアップに画像を表示
     function addMarker(pin) {
+        // ピンに対応するマーカーを地図に追加
         const marker = L.marker([pin.lat, pin.lng]).addTo(map);
+        // マーカーを保存しておく
+        markersById[pin.id] = marker;
         const url = URL.createObjectURL(pin.imageBlob);
         const createdDate = new Date(pin.createdAt);
+        // ポップアップに削除ボタンを含める
         const popupHtml = `
             <div style="text-align:center;">
                 <img src="${url}" style="max-width:200px; max-height:150px; display:block; margin:0 auto;">
                 <div style="margin-top:4px;">${createdDate.toLocaleString('ja-JP')}</div>
+                <button class="delete-btn" data-id="${pin.id}" style="margin-top:6px; padding:4px 8px; background:#e74c3c; color:white; border:none; border-radius:4px; cursor:pointer;">削除</button>
             </div>
         `;
         marker.bindPopup(popupHtml);
@@ -100,6 +107,14 @@
     document.addEventListener('DOMContentLoaded', async () => {
         await openDB();
         initMap();
+
+        // 起動時に現在位置を取得し、地図をその位置に移動させる
+        const startPos = await getCurrentPosition();
+        if (startPos && startPos.coords) {
+            map.setView([startPos.coords.latitude, startPos.coords.longitude], 15);
+        }
+
+        // 登録済みマーカーを追加
         await refreshMarkers();
 
         const cameraBtn = document.getElementById('camera-btn');
@@ -129,5 +144,34 @@
             // 次の入力のためにリセット
             fileInput.value = '';
         });
+
+        // 削除ボタンのクリックをハンドルする。確認後、IndexedDBと地図から削除。
+        document.addEventListener('click', async (evt) => {
+            const target = evt.target;
+            if (target && target.classList.contains('delete-btn')) {
+                const idStr = target.getAttribute('data-id');
+                const id = idStr ? parseInt(idStr, 10) : null;
+                if (id === null || Number.isNaN(id)) return;
+                if (confirm('この写真を削除しますか？')) {
+                    await deletePin(id);
+                    const marker = markersById[id];
+                    if (marker) {
+                        map.removeLayer(marker);
+                        delete markersById[id];
+                    }
+                }
+            }
+        });
     });
+
+    // IndexedDBからピンを削除
+    function deletePin(id) {
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(['pins'], 'readwrite');
+            const store = tx.objectStore('pins');
+            const req = store.delete(id);
+            req.onsuccess = () => resolve();
+            req.onerror = (event) => reject(event);
+        });
+    }
 })();
