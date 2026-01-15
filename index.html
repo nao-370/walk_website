@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>散歩マップ</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // サービスワーカーの登録
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('service-worker.js').catch(function (err) {
+                    console.error('Service worker registration failed:', err);
+                });
+            });
+        }
+    </script>
+</head>
+<body>
+    <div id="map"></div>
+    <button id="camera-btn" aria-label="写真を登録する">📷</button>
+    <input id="file-input" type="file" accept="image/*" capture="environment" style="display:none">
+    <script src="script.js"></script>
+</body>
+</html>
