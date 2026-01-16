@@ -162,6 +162,35 @@
                 }
             }
         });
+
+        // 保存ボタン: 現在のピンをJSONとしてダウンロードする
+        const saveBtn = document.getElementById('save-btn');
+        const loadBtn = document.getElementById('load-btn');
+        const loadInput = document.getElementById('load-input');
+
+        saveBtn.addEventListener('click', async () => {
+            try {
+                await exportPins();
+            } catch (err) {
+                console.error('エクスポートに失敗しました', err);
+            }
+        });
+
+        loadBtn.addEventListener('click', () => {
+            loadInput.click();
+        });
+
+        loadInput.addEventListener('change', async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            try {
+                await importPinsFromFile(file);
+            } catch (err) {
+                console.error('インポートに失敗しました', err);
+            }
+            // 連続ロードに備えリセット
+            loadInput.value = '';
+        });
     });
 
     // IndexedDBからピンを削除
@@ -173,5 +202,75 @@
             req.onsuccess = () => resolve();
             req.onerror = (event) => reject(event);
         });
+    }
+
+    // 追加: BlobをDataURLに変換する
+    function blobToDataURL(blob) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                resolve(reader.result);
+            };
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    // 追加: すべてのピンをエクスポートしJSONをダウンロードする
+    async function exportPins() {
+        const pins = await getPins();
+        // 画像をdataURLに変換する
+        const processed = await Promise.all(pins.map(async (pin) => {
+            const imageData = await blobToDataURL(pin.imageBlob);
+            // idはクライアント固有なので出力に含めない
+            return {
+                lat: pin.lat,
+                lng: pin.lng,
+                createdAt: pin.createdAt,
+                imageData: imageData
+            };
+        }));
+        const json = JSON.stringify(processed, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        link.download = `walk_app_export_${timestamp}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    // 追加: JSONファイルからピンを読み込みIndexedDBに追加する
+    async function importPinsFromFile(file) {
+        const text = await file.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (err) {
+            alert('選択したファイルは正しい形式ではありません');
+            return;
+        }
+        if (!Array.isArray(data)) {
+            alert('選択したファイルは正しい形式ではありません');
+            return;
+        }
+        for (const item of data) {
+            if (typeof item.lat !== 'number' || typeof item.lng !== 'number' || !item.imageData) {
+                continue;
+            }
+            // imageDataをBlobに戻す
+            const response = await fetch(item.imageData);
+            const imageBlob = await response.blob();
+            const record = {
+                lat: item.lat,
+                lng: item.lng,
+                createdAt: item.createdAt || new Date().toISOString(),
+                imageBlob: imageBlob
+            };
+            const id = await addPin(record);
+            addMarker({ id, ...record });
+        }
     }
 })();
