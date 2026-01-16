@@ -33,3 +33,45 @@ html, body {
 #camera-btn:hover {
     background-color: #0056b3;
 }
+
+/* 追加: データ保存ボタンとロードボタンのスタイル */
+#save-btn, #load-btn {
+    position: fixed;
+    left: 20px;
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    z-index: 1000;
+}
+
+/* 保存ボタンは下部、ロードボタンはその上に配置 */
+#save-btn {
+    bottom: 20px;
+}
+
+#load-btn {
+    bottom: 70px;
+}
+
+#save-btn:hover, #load-btn:hover {
+    background-color: #218838;
+}
+
+/* バージョン表示用ラベル */
+#version-label {
+    position: fixed;
+    bottom: 20px;
+    left: 120px;
+    background: rgba(255, 255, 255, 0.8);
+    color: #333;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 1000;
+    pointer-events: none;
+}
