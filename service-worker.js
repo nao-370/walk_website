@@ -1,4 +1,5 @@
-const CACHE_NAME = 'walk_app_cache_v1';
+// バージョンアップ時はキャッシュ名を更新して古いキャッシュを無効化する
+const CACHE_NAME = 'walk_app_cache_v3';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
