@@ -23,6 +23,15 @@
     <div id="map"></div>
     <button id="camera-btn" aria-label="写真を登録する">📷</button>
     <input id="file-input" type="file" accept="image/*" capture="environment" style="display:none">
+
+    <!-- 追加: データの保存とロード用ボタン -->
+    <button id="save-btn" aria-label="データを保存する">保存</button>
+    <button id="load-btn" aria-label="データをロードする">ロード</button>
+    <!-- 読み込み用の非表示ファイル入力 -->
+    <input id="load-input" type="file" accept="application/json" style="display:none">
+
+    <!-- バージョン表示 -->
+    <div id="version-label">v3</div>
     <script src="script.js"></script>
 </body>
 </html>
